@@ -1,0 +1,104 @@
+---
+title: "Cleaning Data AirQuality"
+author: "Javier Alvarez"
+date: "December 1, 2017"
+output: word_document
+---
+
+```{r}
+require(tm)
+require(dplyr)
+require(ggplot2)
+require(lubridate)
+```
+
+
+##Cargando los datos del archivo CSV
+```{r}
+DocName <- "AirQualityUCI.csv"       # Document Name with extension
+datos <- read.csv(DocName, sep = ";", dec = ",", stringsAsFactors = FALSE)
+datos <- datos[ ,c(-16,-17)]         #Eliminar las ultimas columnas con datos NA
+str(datos)
+
+```
+
+##Renombrar las columnas a algo mas facil de recordar
+```{r}
+colnames(datos)
+colnames(datos)[3] <- "CO"
+colnames(datos)[4] <- "Sensor1"
+colnames(datos)[5] <- "NMHC"
+colnames(datos)[6] <- "C6H6"
+colnames(datos)[7] <- "Sensor2"
+colnames(datos)[8] <- "NOX"
+colnames(datos)[9] <- "Sensor3"
+colnames(datos)[10] <- "NO2"
+colnames(datos)[11] <- "Sensor4"
+colnames(datos)[12] <- "Sensor5"
+# Adicionar un campo para el Dia de la semana
+# datos["Dia"] <- wday(as.Date(datos$Date),week_start = 1)
+datos["DateFmt"] <- dmy(datos$Date)
+datos["Dia"] <- strftime(datos$DateFmt, '%u')
+datos["DiaLabel"] <- weekdays(as.Date(datos$DateFmt))
+str(datos)
+```
+
+##Obtener datos de CO con Temperatura
+```{r}
+COTemp <- datos %>% 
+  select(CO, T) %>%
+  filter(CO != -200 & T != -200) 
+
+#usemos un scatter plot para ver la relacion entre esta dos variables
+ggplot(
+  data = COTemp,
+  aes(
+    x = T,
+    y = CO)) + 
+  geom_point() + 
+  ggtitle("Concentracion CO con respecto a la Temperatura") +
+  xlab("Temperatura") +
+  ylab("Niveles de CO")
+
+```
+
+##Agrupar totales por dia de CO
+```{r}
+datosCODia <- datos %>%
+        select(CO,Dia) %>%
+        filter(CO != -200) %>%
+        group_by(Dia) %>%
+        summarize(promedioDia = mean(CO), totalCODia = sum(CO))
+        
+#usemos un scatter plot para ver la relacion entre esta dos variables
+ggplot(
+  data = datosCODia,
+  aes(
+    x = Dia,
+    y =totalCODia)) + 
+  geom_point() + 
+  ggtitle("Concentracion CO con respecto al dia") +
+  xlab("Dia") +
+  ylab("Niveles de CO")
+```
+#Agrupado por Mes
+```{r}
+datosCOMes <- datos %>%
+        select(CO,Dia) %>%
+        mutate(Mes = month(as.Date(datos$Date), label = TRUE)) %>%
+        filter(CO != -200) %>%
+        group_by(Mes) %>%
+        summarize(promedio = mean(CO), total = sum(CO))
+        
+#usemos un scatter plot para ver la relacion entre esta dos variables
+ggplot(
+  data = datosCOMes,
+  aes(
+    x = Mes,
+    y =promedio)) + 
+  geom_point() + 
+  ggtitle("Concentracion CO por Mes") +
+  xlab("Mes") +
+  ylab("Niveles de CO")
+```
+
