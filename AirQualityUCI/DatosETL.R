@@ -51,6 +51,50 @@ datos["DateFmt"] <- dmy(datos$Date)
 datos["Dia"] <- strftime(datos$DateFmt, '%u')
 datos["DiaLabel"] <- weekdays(datos$DateFmt)
 
+#Adicionar un indice para procesar los datos con -200
+datos$indice <- 1:nrow(datos)
+
+#Crear funcion para calcular el promedio de los valores cercanos
+promCercanos <- function(indice, nombreCampo) {
+  #Asigna a la muestra los dos valores anteriores al indice
+  muestra <- datos[(indice-1):(indice-2), nombreCampo]
+  i <- 1
+  j <- 3
+  #Buscar y adicionar los dos valores siguientes al indice
+  while (j<=4) {
+    if (datos[(indice + i), nombreCampo] != -200) {
+      muestra[j] <- datos[(indice + i), nombreCampo]
+      j <- j + 1
+    }
+    i <- i +1
+  }
+  return(mean(muestra))
+}
+
+
+# Para cada columna buscar valores perdidos (-200) y reemplazarlos por la media de los mas cercanos
+IndicesCO <- datos[datos$CO == -200,"indice"]
+tail(IndicesCO)
+for (x in IndicesCO) {
+  print(x)
+  datos[IndicesCO[x],"CO"] <- promCercanos(x)    
+}
+
+
+
+x<- datos %>%
+  select(rownumber,CO)
+
+rownames(datos[1:10,1:2])
+
+select(rownames(CO),CO)
+nrow(datos)
+
+datos$indice <- 1:nrow(datos)
+#summary(datos)
+
+
+
 ##Obtener datos de CO con Temperatura
 COTemp <- datos %>% 
   select(CO, T) %>%
@@ -106,3 +150,5 @@ ggplot(
   xlab("Mes") +
   ylab("Niveles de CO Promedio")
 
+
+# Crear una funcion para encontrar el promedio de los valores mas cercanos
