@@ -34,17 +34,7 @@ datos <- datos[ ,c(-16,-17)]
 datos <-datos[complete.cases(datos),]       
 
 ##Renombrar las columnas a algo mas facil de leer
-colnames(datos)[3] <- "CO"
-colnames(datos)[4] <- "Sensor1"
-colnames(datos)[5] <- "NMHC"
-colnames(datos)[6] <- "C6H6"
-colnames(datos)[7] <- "Sensor2"
-colnames(datos)[8] <- "NOX"
-colnames(datos)[9] <- "Sensor3"
-colnames(datos)[10] <- "NO2"
-colnames(datos)[11] <- "Sensor4"
-colnames(datos)[12] <- "Sensor5"
-
+colnames(datos) <- c("Date","Time","CO","Sensor1","NMHC","C6H6","Sensor2","NOX","Sensor3","NO2","Sensor4","Sensor5","T","RH","AH")
 #Convertir Fecha al tipo Fecha correcto
 datos["DateFmt"] <- dmy(datos$Date)
 # Adicionar un campo para el Dia de la semana
@@ -53,15 +43,19 @@ datos["DiaLabel"] <- weekdays(datos$DateFmt)
 
 #Adicionar un indice para procesar los datos con -200
 datos$indice <- 1:nrow(datos)
+totalFilas <- nrow(datos)
 
 #Crear funcion para calcular el promedio de los valores cercanos
 promCercanos <- function(indice, nombreCampo) {
+  print(indice)
   #Asigna a la muestra los dos valores anteriores al indice
   muestra <- datos[(indice-1):(indice-2), nombreCampo]
   i <- 1
   j <- 3
-  #Buscar y adicionar los dos valores siguientes al indice
-  while (j<=4) {
+  
+  
+  #Buscar y adicionar los dos valores siguientes al indice, que sean diferentes de -200, si existen
+  while (j<=4 & i<4 & (indice + i < totalFilas)) {
     if (datos[(indice + i), nombreCampo] != -200) {
       muestra[j] <- datos[(indice + i), nombreCampo]
       j <- j + 1
@@ -73,36 +67,36 @@ promCercanos <- function(indice, nombreCampo) {
 
 
 # Para cada columna buscar valores perdidos (-200) y reemplazarlos por la media de los mas cercanos
-IndicesCO <- datos[datos$CO == -200,"indice"]
-tail(IndicesCO)
-for (x in IndicesCO) {
-  print(x)
-  datos[IndicesCO[x],"CO"] <- promCercanos(x)    
-}
-
-
-
-x<- datos %>%
-  select(rownumber,CO)
-
-rownames(datos[1:10,1:2])
-
-select(rownames(CO),CO)
-nrow(datos)
-
-datos$indice <- 1:nrow(datos)
-#summary(datos)
-
-
-
-##Obtener datos de CO con Temperatura
-COTemp <- datos %>% 
-  select(CO, T) %>%
-  filter(CO != -200 & T != -200)  # Eliminar datos malos
+Indices <- datos[datos$CO == -200,"indice"]
+for (x in Indices) { datos[x,"CO"] <- promCercanos(x, "CO") }
+Indices <- datos[datos$Sensor1 == -200,"indice"]
+for (x in Indices) { datos[x,"Sensor1"] <- promCercanos(x, "Sensor1") }
+Indices <- datos[datos$NMHC == -200,"indice"]
+for (x in Indices) { datos[x,"NMHC"] <- promCercanos(x, "NMHC") }
+Indices <- datos[datos$C6H6 == -200,"indice"]
+for (x in Indices) { datos[x,"C6H6"] <- promCercanos(x, "C6H6") }
+Indices <- datos[datos$Sensor2 == -200,"indice"]
+for (x in Indices) { datos[x,"Sensor2"] <- promCercanos(x, "Sensor2") }
+Indices <- datos[datos$NOX == -200,"indice"]
+for (x in Indices) { datos[x,"NOX"] <- promCercanos(x, "NOX") }
+Indices <- datos[datos$Sensor3 == -200,"indice"]
+for (x in Indices) { datos[x,"Sensor3"] <- promCercanos(x, "Sensor3") }
+Indices <- datos[datos$NO2 == -200,"indice"]
+for (x in Indices) { datos[x,"NO2"] <- promCercanos(x, "NO2") }
+Indices <- datos[datos$Sensor4 == -200,"indice"]
+for (x in Indices) { datos[x,"Sensor4"] <- promCercanos(x, "Sensor4") }
+Indices <- datos[datos$Sensor5 == -200,"indice"]
+for (x in Indices) { datos[x,"Sensor5"] <- promCercanos(x, "Sensor5") }
+Indices <- datos[datos$T == -200,"indice"]
+for (x in Indices) { datos[x,"T"] <- promCercanos(x, "T") }
+Indices <- datos[datos$RH == -200,"indice"]
+for (x in Indices) { datos[x,"RH"] <- promCercanos(x, "RH") }
+Indices <- datos[datos$AH == -200,"indice"]
+for (x in Indices) { datos[x,"AH"] <- promCercanos(x, "AH") }
 
 #usemos un scatter plot para ver la relacion entre esta dos variables
 ggplot(
-  data = COTemp,
+  data = datos,
   aes(
     x = T,
     y = CO)) + 
@@ -115,7 +109,6 @@ ggplot(
 ## CO - Agrupar por dia
 datosCODia <- datos %>%
   select(CO, Dia) %>%
-  filter(CO != -200) %>%
   group_by(Dia) %>%
   summarize(promedioDia = mean(CO), totalCODia = sum(CO))
   
@@ -135,7 +128,6 @@ ggplot(
 datosCOMes <- datos %>%
   select(CO) %>%
   mutate(Mes = lubridate::month(datos$Date, label = TRUE)) %>%
-  filter(CO != -200) %>%
   group_by(Mes) %>%
   summarize(promedio = mean(CO), total = sum(CO))
 
