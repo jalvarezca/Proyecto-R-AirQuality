@@ -17,26 +17,18 @@ dashboardPage(skin = "blue",
               dashboardHeader(title = "AirQualityCapstone"),
               dashboardSidebar(
                 sidebarMenu(
-                  menuItem("Histogramas", tabName = "dashboard", icon = icon("bar-chart-o")),
-                  menuItem("Line Plot", tabName = "linePlot", icon = icon("dashboard"))
+                  menuItem("Analisis de CO", tabName = "CO", icon = icon("bar-chart-o")),
+                  menuItem("Analisis de NMHC", tabName = "NMHC", icon = icon("bar-chart-o")),
+                  menuItem("Analisis de C6H6", tabName = "C6H6", icon = icon("bar-chart-o"))
                 )
               ),
               ## Body content
               dashboardBody(
                 tabItems(
-                  # First tab content
-                  tabItem(tabName = "dashboard",
+                  # Primer Tab - Analisi de CO
+                  tabItem(tabName = "CO",
                           fluidRow(
-                            box(
-                              title = "Controls1", 
-                              status = "warning", 
-                              solidHeader = TRUE,  
-                              collapsible = TRUE,
-                              sliderInput("slider1", "Number of observations:", 1, 30, 10)
-                            )
-                          ),
-                          fluidRow(
-                            box(title = "CO agrupado por dia", 
+                            box(title = "CO por dia", 
                                 status = "primary",
                                 solidHeader = TRUE,
                                 collapsible = FALSE,
@@ -45,15 +37,7 @@ dashboardPage(skin = "blue",
                                 plotOutput("plotCODia", height = 350)
                             )
                           ),
-                          fluidRow(
-                            box(
-                              title = "Controls 2", 
-                              status = "warning", 
-                              solidHeader = TRUE,  
-                              collapsible = FALSE,
-                              sliderInput("slider2", "Number of observations2:", 1, 30, 10)
-                            )
-                          ),
+
                           fluidRow(
                             box(title = "CO por Mes", 
                                 status = "primary",
@@ -68,30 +52,57 @@ dashboardPage(skin = "blue",
                   )
                   ,
 
-                  ## Second tab content
-                  tabItem(tabName = "linePlot",
+                  ## Segundo Tab Ananlisis de NMHC
+                  tabItem(tabName = "NMHC",
                           fluidRow(
-                            box(
-                              title = "Controls 3",
-                              status = "warning",
+                            box(title = "NMHC por dia", 
+                                status = "primary",
+                                solidHeader = TRUE,
+                                collapsible = FALSE,
+                                background = "light-blue",
+                                width = 400,
+                                plotOutput("plotNMHCDia", height = 350)
+                            )
+                          ),
+                          
+                          fluidRow(
+                            box(title = "NMHC por Mes", 
+                                status = "primary",
+                                solidHeader = TRUE,
+                                collapsible = FALSE,
+                                background = "light-blue",
+                                width = 400,
+                                plotOutput("plotNMHCMes", height = 350)
+                            )
+                          )
+                )
+                ,
+                ## Tercer Tab Ananlisis de C6H6
+                tabItem(tabName = "C6H6",
+                        fluidRow(
+                          box(title = "C6H6 por dia", 
+                              status = "primary",
                               solidHeader = TRUE,
                               collapsible = FALSE,
-                              sliderInput("slider3", "Range:",
-                                          min = 1917, max = 2014,
-                                          value = c(1920,2010))
-                            )
-                          #,
-                          #   box(
-                          #     title = "Plot of year, sum of gross and qty of movies",
-                          #     status = "primary",
-                          #     soludHeader = TRUE,
-                          #     collapsible = FALSE,
-                          #     background = "green",
-                          #     width=12,
-                          #     plotOutput(outputId = "lineplot", height=600))
-                           )
-                  )
+                              background = "light-blue",
+                              width = 400,
+                              plotOutput("plotC6H6Dia", height = 350)
+                          )
+                        ),
+                        
+                        fluidRow(
+                          box(title = "C6H6 por Mes", 
+                              status = "primary",
+                              solidHeader = TRUE,
+                              collapsible = FALSE,
+                              background = "light-blue",
+                              width = 400,
+                              plotOutput("plotC6H6Mes", height = 350)
+                          )
+                        )
                 )
-              )
+                
+            )
+        )
 )
 

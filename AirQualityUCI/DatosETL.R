@@ -8,10 +8,13 @@
 require(tm)
 require(dplyr)
 require(ggplot2)
+require(hexbin)
 require(lubridate)
+require(ggpubr)
 
 DocName <- "AirQualityUCI.csv"       # Document Name with extension
 datos <- read.csv(DocName, sep = ";", dec = ",", stringsAsFactors = FALSE)
+colnames(datos) <- c("Date","Time","CO","Sensor1","NMHC","C6H6","Sensor2","NOX","Sensor3","NO2","Sensor4","Sensor5","T","RH","AH")
 
 ## ANALISIS DE DATOS INVALIDOS CON MICE Y VIM
 #require(VIM)    #Visualization and Imputation of Missing Values##Cargando los datos del archivo CSV
@@ -33,8 +36,6 @@ datos <- datos[ ,c(-16,-17)]
 #Eliminar FILAS invalidos usando VIM
 datos <-datos[complete.cases(datos),]       
 
-##Renombrar las columnas a algo mas facil de leer
-colnames(datos) <- c("Date","Time","CO","Sensor1","NMHC","C6H6","Sensor2","NOX","Sensor3","NO2","Sensor4","Sensor5","T","RH","AH")
 #Convertir Fecha al tipo Fecha correcto
 datos["DateFmt"] <- dmy(datos$Date)
 # Adicionar un campo para el Dia de la semana
@@ -47,13 +48,10 @@ totalFilas <- nrow(datos)
 
 #Crear funcion para calcular el promedio de los valores cercanos
 promCercanos <- function(indice, nombreCampo) {
-  print(indice)
   #Asigna a la muestra los dos valores anteriores al indice
   muestra <- datos[(indice-1):(indice-2), nombreCampo]
   i <- 1
   j <- 3
-  
-  
   #Buscar y adicionar los dos valores siguientes al indice, que sean diferentes de -200, si existen
   while (j<=4 & i<4 & (indice + i < totalFilas)) {
     if (datos[(indice + i), nombreCampo] != -200) {
@@ -94,53 +92,91 @@ for (x in Indices) { datos[x,"RH"] <- promCercanos(x, "RH") }
 Indices <- datos[datos$AH == -200,"indice"]
 for (x in Indices) { datos[x,"AH"] <- promCercanos(x, "AH") }
 
-#usemos un scatter plot para ver la relacion entre esta dos variables
-ggplot(
-  data = datos,
-  aes(
-    x = T,
-    y = CO)) + 
-  geom_point() + 
-  ggtitle("Concentracion CO con respecto a la Temperatura") +
-  xlab("Temperatura") +
-  ylab("Niveles de CO")
-
-
-## CO - Agrupar por dia
-datosCODia <- datos %>%
-  select(CO, Dia) %>%
-  group_by(Dia) %>%
-  summarize(promedioDia = mean(CO), totalCODia = sum(CO))
+# #Usemos un scatter plot para ver la relacion entre esta dos variables T y CO
+# ggplot(
+#   data = datos,
+#   aes(x = T,  y = CO)) + 
+#   geom_point() + geom_smooth() +
+#   ggtitle("Concentracion CO con respecto a la Temperatura") +
+#   xlab("Temperatura") +
+#   ylab("Niveles de CO")
+# 
+# 
+# ggplot(datos, aes(T, CO)) +
+#   geom_point() + geom_smooth()
+# 
+# 
+# ## CO - Agrupar por dia
+# datosCODia <- datos %>%
+#   select(CO, Dia) %>%
+#   group_by(Dia) %>%
+#   summarize(promedioDia = mean(CO), totalCODia = sum(CO))
   
 
-# Usemos un scatter plot para ver la relacion entre esta dos variables
-ggplot(
-  data = datosCODia,
-  aes(
-    x = Dia,
-    y =totalCODia)) + 
-  geom_point() + 
-  ggtitle("Concentracion CO con respecto al dia") +
-  xlab("Dia") +
-  ylab("Niveles de CO")
+# # Usemos un scatter plot para ver la relacion entre esta dos variables
+# ggplot(
+#   data = datosCODia,
+#   aes(
+#     x = Dia,
+#     y =totalCODia)) + 
+#   geom_point() + 
+#   ggtitle("Concentracion CO con respecto al dia") +
+#   xlab("Dia") +
+#   ylab("Niveles de CO")
+# 
+# ggplot(
+#   data = datos,
+#   aes(x = Dia,y =CO)) + 
+#   geom_boxplot() + 
+#   ggtitle("Concentracion CO con respecto al dia") +
+#   xlab("Dia") +
+#   ylab("Niveles de CO")
+# 
+# 
+# # CO - Agrupado por Mes
+# datosCOMes <- datos %>%
+#   select(CO) %>%
+#   mutate(Mes = lubridate::month(datos$Date, label = TRUE)) %>%
+#   group_by(Mes) %>%
+#   summarize(promedio = mean(CO), total = sum(CO))
+# 
+# #usemos un scatter plot para ver la relacion entre esta dos variables
+# ggplot(
+#   data = datosCOMes,
+#   aes(
+#     x = Mes,
+#     y =promedio)) + 
+#   geom_point() + 
+#   ggtitle("Concentracion") +
+#   xlab("Mes") +
+#   ylab("Niveles de CO Promedio")
+# 
+# ggplot(
+#   data = datos,
+#   aes(
+#     x = lubridate::month(datos$Date, label = TRUE),
+#     y =CO)) + 
+#   geom_boxplot() + 
+#   ggtitle("Concentracion por Mes de CO") +
+#   xlab("Mes") +
+#   ylab("Niveles de CO")
 
-# CO - Agrupado por Mes
-datosCOMes <- datos %>%
-  select(CO) %>%
-  mutate(Mes = lubridate::month(datos$Date, label = TRUE)) %>%
-  group_by(Mes) %>%
-  summarize(promedio = mean(CO), total = sum(CO))
 
-#usemos un scatter plot para ver la relacion entre esta dos variables
-ggplot(
-  data = datosCOMes,
-  aes(
-    x = Mes,
-    y =promedio)) + 
-  geom_point() + 
-  ggtitle("Concentracion") +
-  xlab("Mes") +
-  ylab("Niveles de CO Promedio")
+#Analisis del comportamiento de vbles numericas
 
-
-# Crear una funcion para encontrar el promedio de los valores mas cercanos
+# #Verificar si se comporta como una distribucion normal
+# ggqqplot(datos$CO, ylab = "CO concentracion")
+# shapiro.test(head(datos$CO,5000))
+# 
+# ggqqplot(datos$NOX, ylab = "NOx concentracion")
+# shapiro.test(head(datos$NOX,5000))
+# 
+# cor.test(datos$CO, datos$NOX, method=c("pearson"))
+# cor.test(datos$CO, datos$NO2, method=c("pearson")) 
+# cor.test(datos$CO, datos$C6H6, method=c("pearson")) 
+# 
+# summary(datos$CO)
+# plot(density(datos$CO))
+# plot(density(datos$NMHC))
+# 
+# plot(density(datos$C6H6))
